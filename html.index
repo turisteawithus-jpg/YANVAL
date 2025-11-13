@@ -1,765 +1,314 @@
-<!DOCTYPE html><html lang="es"><head>
-<base href="https://o2fqcb7sv3322.ok.kimi.link">
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Spa Facial Gratis con Yanbal - Reserva tu cita ahora</title>
-    <meta name="description" content="Spa facial gratuito con productos Yanbal. Limpieza profunda, hidratación y análisis personalizado de piel. Agenda tu cita hoy."/>
+// Funciones principales del sitio web de Yanbal Beauty
+
+// Variables globales
+let isAdminMode = false;
+let testimonialSwiper = null;
+
+// Inicialización cuando el DOM está cargado
+document.addEventListener('DOMContentLoaded', function() {
+    initializeSwiper();
+    initializeAnimations();
+    loadAdminSettings();
+});
+
+// Función para inicializar el Swiper de testimonios
+function initializeSwiper() {
+    testimonialSwiper = new Swiper('.testimonios-swiper', {
+        loop: true,
+        autoplay: {
+            delay: 5000,
+            disableOnInteraction: false,
+        },
+        pagination: {
+            el: '.swiper-pagination',
+            clickable: true,
+        },
+        breakpoints: {
+            640: {
+                slidesPerView: 1,
+                spaceBetween: 20,
+            },
+            768: {
+                slidesPerView: 2,
+                spaceBetween: 30,
+            },
+            1024: {
+                slidesPerView: 3,
+                spaceBetween: 40,
+            },
+        },
+    });
+}
+
+// Función para inicializar animaciones GSAP
+function initializeAnimations() {
+    // Animación de entrada para las tarjetas de beneficios
+    gsap.from('.card-hover', {
+        duration: 1,
+        y: 50,
+        opacity: 0,
+        stagger: 0.2,
+        ease: 'power3.out',
+        scrollTrigger: {
+            trigger: '#beneficios',
+            start: 'top 80%',
+        }
+    });
+
+    // Animación de entrada para las imágenes de la galería
+    gsap.from('.gallery-item', {
+        duration: 0.8,
+        scale: 0.8,
+        opacity: 0,
+        stagger: 0.1,
+        ease: 'back.out(1.7)',
+        scrollTrigger: {
+            trigger: '#galeria',
+            start: 'top 80%',
+        }
+    });
+}
+
+// Función para hacer scroll al formulario
+function scrollToForm() {
+    document.getElementById('formulario').scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+    });
+}
+
+// Función para manejar el envío del formulario
+function handleFormSubmit(event) {
+    event.preventDefault();
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    const formData = new FormData(event.target);
+    const data = Object.fromEntries(formData);
     
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com"/>
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&amp;family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+    // Mostrar mensaje de confirmación
+    showNotification('¡Formulario enviado exitosamente! Redirigiendo a WhatsApp...', 'success');
     
-    <!-- Swiper CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
+    // Limpiar el formulario
+    event.target.reset();
     
-    <!-- GSAP -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    // Abrir WhatsApp con los datos
+    setTimeout(() => {
+        sendWhatsAppMessage(data);
+    }, 1000);
     
-    <!-- Custom Styles -->
-    <style>
-        :root {
-            --fucsia: #D60270;
-            --dorado: #C9A14E;
-            --gris-oscuro: #222222;
-            --rosa-pastel: #FFF0F5;
-        }
-        
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, var(--rosa-pastel) 0%, #ffffff 100%);
-        }
-        
-        .font-playfair {
-            font-family: 'Playfair Display', serif;
-        }
-        
-        .hero-bg {
-            background: linear-gradient(135deg, rgba(214, 2, 112, 0.4) 0%, rgba(255, 240, 245, 0.6) 100%),
-                        url('https://kimi-web-img.moonshot.cn/img/www.100percentpure.com/316bff2c96ba9dd244dd2794273145bd3f7acaec.webp');
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-        }
-        
-        .card-hover {
-            transition: all 0.3s ease;
-        }
-        
-        .card-hover:hover {
-            transform: translateY(-8px) scale(1.02);
-            box-shadow: 0 20px 40px rgba(214, 2, 112, 0.15);
-            border-color: var(--dorado);
-        }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, var(--fucsia) 0%, #FF1493 100%);
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary:hover {
-            background: linear-gradient(135deg, var(--dorado) 0%, #DAA520 100%);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(201, 161, 78, 0.3);
-        }
-        
-        .floating-whatsapp {
-            position: fixed;
-            bottom: 30px;
-            right: 30px;
-            z-index: 1000;
-            animation: pulse 2s infinite;
-        }
-        
-        .floating-cta {
-            position: fixed;
-            bottom: 100px;
-            right: 30px;
-            z-index: 999;
-        }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-        
-        .testimonial-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-        }
-        
-        .gallery-item {
-            transition: all 0.3s ease;
-        }
-        
-        .gallery-item:hover {
-            transform: scale(1.05);
-            z-index: 10;
-        }
-        
-        .accordion-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-        
-        .accordion-content.active {
-            max-height: 500px;
-        }
-        
-        .bokeh-bg {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 20% 50%, rgba(214, 2, 112, 0.1) 0%, transparent 50%),
-                        radial-gradient(circle at 80% 20%, rgba(201, 161, 78, 0.1) 0%, transparent 50%),
-                        radial-gradient(circle at 40% 80%, rgba(214, 2, 112, 0.05) 0%, transparent 50%);
-            pointer-events: none;
-        }
-        
-        /* Estilos para modo administrativo */
-        .admin-mode {
-            display: none;
-        }
-        
-        .admin-active .admin-mode {
-            display: block;
-        }
-        
-        .admin-image-upload {
-            position: relative;
-            cursor: pointer;
-            border: 2px dashed transparent;
-            transition: all 0.3s ease;
-        }
-        
-        .admin-active .admin-image-upload:hover {
-            border-color: var(--fucsia);
-            background: rgba(214, 2, 112, 0.05);
-        }
-        
-        .admin-upload-icon {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: var(--fucsia);
-            color: white;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            opacity: 0.8;
-        }
-        
-        .admin-active .admin-upload-icon {
-            display: flex;
-        }
-        
-        /* Panel de control administrativo */
-        .admin-panel {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: white;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            z-index: 1001;
-            display: none;
-        }
-        
-        .admin-panel.active {
-            display: block;
-        }
-        
-        .admin-toggle {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            background: var(--fucsia);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 12px 16px;
-            cursor: pointer;
-            z-index: 1002;
-            font-weight: 600;
-        }
-        
-        /* Estilos para inputs de carga de archivos */
-        .admin-file-input {
-            display: none;
-        }
-        
-        /* Indicador visual para imágenes editables */
-        .admin-editable {
-            position: relative;
-        }
-        
-        .admin-active .admin-editable::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            border: 2px dashed var(--fucsia);
-            border-radius: inherit;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .admin-active .admin-editable:hover::after {
-            opacity: 0.3;
-        }
-    </style>
-<script src="https://statics.moonshot.cn/sdk/preview-widgets.min.js" defer=""></script></head>
-<body class="text-gray-800">
-    <!-- Botón para activar modo administrativo -->
-    <button class="admin-toggle" onclick="toggleAdminMode()">
-        🔒 Admin
-    </button>
+    // En una implementación real, aquí se enviaría la información a un servidor
+    console.log('Datos del formulario:', data);
+}
+
+// Función para alternar el acordeón
+function toggleAccordion(id) {
+    const content = document.getElementById(id + '-content');
+    const icon = document.getElementById(id + '-icon');
     
-    <!-- Panel de control administrativo -->
-    <div id="adminPanel" class="admin-panel">
-        <h3 class="font-bold text-gray-800 mb-3">Modo Administrativo</h3>
-        <p class="text-sm text-gray-600 mb-3">Haz clic en las imágenes para cambiarlas</p>
-        <button onclick="saveChanges()" class="bg-green-500 text-white px-4 py-2 rounded-lg text-sm w-full mb-2">
-            💾 Guardar Cambios
-        </button>
-        <button onclick="toggleAdminMode()" class="bg-gray-500 text-white px-4 py-2 rounded-lg text-sm w-full">
-            ❌ Salir
-        </button>
-    </div>
-
-    <!-- Bokeh Background -->
-    <div class="bokeh-bg fixed inset-0 z-0"></div>
-    
-    <!-- Navigation -->
-    <nav class="fixed top-0 w-full bg-white/95 backdrop-blur-md z-50 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="font-playfair text-2xl font-bold text-gray-800">
-                    Yanbal <span class="text-pink-600">Beauty</span>
-                </div>
-                <div class="hidden md:flex space-x-8">
-                    <a href="#beneficios" class="text-gray-600 hover:text-pink-600 transition-colors">Beneficios</a>
-                    <a href="#sobre-carolina" class="text-gray-600 hover:text-pink-600 transition-colors">Sobre Carolina</a>
-                    <a href="#testimonios" class="text-gray-600 hover:text-pink-600 transition-colors">Testimonios</a>
-                    <a href="#galeria" class="text-gray-600 hover:text-pink-600 transition-colors">Galería</a>
-                </div>
-                <button onclick="scrollToForm()" class="btn-primary text-white px-6 py-2 rounded-full font-medium">
-                    Reservar Cita
-                </button>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Hero Section -->
-    <section class="hero-bg min-h-screen flex items-center justify-center relative pt-16">
-        <div class="absolute inset-0 bg-gradient-to-r from-pink-600/20 to-transparent"></div>
-        <div class="relative z-10 text-center text-white px-4 max-w-4xl mx-auto">
-            <h1 class="font-playfair text-4xl md:text-6xl font-bold mb-6 leading-tight">
-                Spa Facial <span class="text-yellow-300">Gratis</span> con Yanbal
-            </h1>
-            <p class="text-xl md:text-2xl mb-8 font-light">
-                Reserva tu cita y descubre el poder transformador de nuestros productos
-            </p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <button onclick="scrollToForm()" class="btn-primary text-white px-8 py-4 rounded-full font-semibold text-lg shadow-lg">
-                    Quiero mi spa gratis 💆‍♀️
-                </button>
-                <div class="text-sm">
-                    <p class="font-semibold">⚡ Solo 5 citas por semana</p>
-                    <p>Agenda ya tu experiencia gratuita</p>
-                </div>
-            </div>
-        </div>
+    if (content.classList.contains('active')) {
+        content.classList.remove('active');
+        icon.style.transform = 'rotate(0deg)';
+    } else {
+        // Cerrar todos los demás acordeones
+        document.querySelectorAll('.accordion-content').forEach(item => {
+            item.classList.remove('active');
+        });
+        document.querySelectorAll('[id$="-icon"]').forEach(item => {
+            item.style.transform = 'rotate(0deg)';
+        });
         
-        <!-- Scroll indicator -->
-        <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white animate-bounce">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
-            </svg>
-        </div>
-    </section>
+        // Abrir el acordeón actual
+        content.classList.add('active');
+        icon.style.transform = 'rotate(180deg)';
+    }
+}
 
-    <!-- Beneficios Section -->
-    <section id="beneficios" class="py-20 relative z-10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="font-playfair text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-                    Beneficios de tu <span class="text-pink-600">Spa Facial</span>
-                </h2>
-                <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                    Una experiencia completa de cuidado facial que transformará tu piel y tu forma de ver el autocuidado
-                </p>
-            </div>
-            
-            <div class="grid md:grid-cols-3 gap-8">
-                <!-- Beneficio 1 -->
-                <div class="card-hover bg-white/80 backdrop-blur-sm rounded-2xl p-8 border border-gray-200 text-center">
-                    <div class="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <svg class="w-8 h-8 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="font-playfair text-2xl font-semibold text-gray-800 mb-4">Limpieza Profunda</h3>
-                    <p class="text-gray-600 leading-relaxed">
-                        Eliminamos impurezas, células muertas y toxinas acumuladas en tu piel, dejándola completamente renovada y preparada para absorber los nutrientes esenciales.
-                    </p>
-                </div>
-                
-                <!-- Beneficio 2 -->
-                <div class="card-hover bg-white/80 backdrop-blur-sm rounded-2xl p-8 border border-gray-200 text-center">
-                    <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="font-playfair text-2xl font-semibold text-gray-800 mb-4">Hidratación Intensiva</h3>
-                    <p class="text-gray-600 leading-relaxed">
-                        Aplicamos productos Yanbal de última generación que penetran en las capas más profundas de tu piel, proporcionando hidratación duradera y luminosidad natural.
-                    </p>
-                </div>
-                
-                <!-- Beneficio 3 -->
-                <div class="card-hover bg-white/80 backdrop-blur-sm rounded-2xl p-8 border border-gray-200 text-center">
-                    <div class="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <svg class="w-8 h-8 text-pink-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="font-playfair text-2xl font-semibold text-gray-800 mb-4">Análisis Personalizado</h3>
-                    <p class="text-gray-600 leading-relaxed">
-                        Evaluamos tu tipo de piel y necesidades específicas para recomendarte el régimen de cuidado ideal con productos Yanbal perfectos para ti.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
+// Funciones del modo administrativo
+function toggleAdminMode() {
+    isAdminMode = !isAdminMode;
+    const body = document.body;
+    const adminPanel = document.getElementById('adminPanel');
+    
+    if (isAdminMode) {
+        body.classList.add('admin-active');
+        adminPanel.classList.add('active');
+    } else {
+        body.classList.remove('admin-active');
+        adminPanel.classList.remove('active');
+    }
+}
 
-    <!-- Sobre Carolina Section -->
-    <section id="sobre-carolina" class="py-20 bg-white/50 relative z-10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="grid lg:grid-cols-2 gap-12 items-center">
-                <div class="order-2 lg:order-1">
-                    <h2 class="font-playfair text-4xl md:text-5xl font-bold text-gray-800 mb-6">
-                        Hola, soy <span class="text-pink-600">Carolina</span>
-                    </h2>
-                    <div class="text-xl text-gray-600 mb-6">
-                        <span class="bg-pink-100 text-pink-800 px-3 py-1 rounded-full font-semibold">
-                            Coordinadora de Campo Yanbal
-                        </span>
-                    </div>
-                    <p class="text-lg text-gray-700 mb-6 leading-relaxed">
-                        Con más de 5 años de experiencia en el cuidado facial y productos de belleza, me apasiona ayudar a cada mujer a descubrir su belleza natural.
-                    </p>
-                    <p class="text-lg text-gray-700 mb-8 leading-relaxed">
-                        Mi enfoque personalizado y el uso de productos Yanbal de alta garantía me permiten ofrecerte resultados visibles desde la primera sesión. Creo que cada piel tiene su historia y merece un cuidado único.
-                    </p>
-                    
-                    <!-- Stats -->
-                    <div class="grid grid-cols-3 gap-6 text-center">
-                        <div class="bg-pink-50 rounded-xl p-4">
-                            <div class="text-2xl font-bold text-pink-600">500+</div>
-                            <div class="text-sm text-gray-600">Mujeres atendidas</div>
-                        </div>
-                        <div class="bg-yellow-50 rounded-xl p-4">
-                            <div class="text-2xl font-bold text-yellow-600">5</div>
-                            <div class="text-sm text-gray-600">Años de experiencia</div>
-                        </div>
-                        <div class="bg-pink-50 rounded-xl p-4">
-                            <div class="text-2xl font-bold text-pink-600">98%</div>
-                            <div class="text-sm text-gray-600">Satisfacción</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="order-1 lg:order-2 text-center">
-                    <!-- Recuadro de imagen de Carolina con funcionalidad de carga -->
-                    <div class="relative inline-block">
-                        <div id="carolinaImageContainer" class="admin-editable admin-image-upload" onclick="adminUploadImage(&#39;carolina&#39;)">
-                            <img id="carolinaProfileImage" src="resources/carolina-profesional.png" alt="Carolina - Consultora de Belleza Yanbal" class="w-80 h-80 object-cover rounded-2xl shadow-2xl"/>
-                            <div class="admin-upload-icon">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                </svg>
-                            </div>
-                        </div>
-                        <input type="file" id="carolinaFileInput" class="admin-file-input" accept="image/*" onchange="handleAdminImageUpload(event, &#39;carolina&#39;)"/>
-                        
-                        <div class="absolute -bottom-4 -right-4 bg-pink-600 text-white p-4 rounded-full shadow-lg">
-                            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-6">
-                        <div class="text-sm text-gray-600 mb-2">Especialista certificada en:</div>
-                        <div class="flex flex-wrap justify-center gap-2">
-                            <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">Cuidado Facial</span>
-                            <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">Productos Yanbal</span>
-                            <span class="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm">Análisis de Piel</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+// Función para manejar la carga de imágenes en modo administrativo
+function adminUploadImage(type) {
+    if (!isAdminMode) return;
+    
+    const fileInput = document.getElementById(type + 'FileInput');
+    if (fileInput) {
+        fileInput.click();
+    }
+}
 
-    <!-- Testimonios Section -->
-    <section id="testimonios" class="py-20 relative z-10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="font-playfair text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-                    Lo que dicen <span class="text-pink-600">nuestras clientes</span>
-                </h2>
-                <p class="text-xl text-gray-600">
-                    Experiencias reales de mujeres que han transformado su piel
-                </p>
-            </div>
-            
-            <!-- Swiper -->
-            <div class="swiper testimonios-swiper">
-                <div class="swiper-wrapper">
-                    <!-- Testimonio 1 -->
-                    <div class="swiper-slide">
-                        <div class="testimonial-card rounded-2xl p-8 mx-4 text-center">
-                            <div id="testimonial1ImageContainer" class="admin-editable admin-image-upload w-20 h-20 bg-pink-100 rounded-full mx-auto mb-6 overflow-hidden" onclick="adminUploadImage(&#39;testimonial1&#39;)">
-                                <img id="testimonial1Image" src="https://kimi-web-img.moonshot.cn/img/img.freepik.com/1f7d683eec60bab924ebedacfc2b557d725b8c08.jpg" alt="María José" class="w-full h-full object-cover"/>
-                                <div class="admin-upload-icon" style="width: 30px; height: 30px;">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                            <input type="file" id="testimonial1FileInput" class="admin-file-input" accept="image/*" onchange="handleAdminImageUpload(event, &#39;testimonial1&#39;)"/>
-                            
-                            <div class="flex justify-center mb-4">
-                                <div class="flex text-yellow-400">
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                </div>
-                            </div>
-                            <p class="text-gray-600 mb-6 leading-relaxed">
-                                &#34;Mi piel nunca se había visto tan radiante. Carolina es una profesional excelente, me explicó cada paso del tratamiento y me dio consejos personalizados. ¡Increíble experiencia!&#34;
-                            </p>
-                            <div class="font-semibold text-gray-800">María José R.</div>
-                            <div class="text-sm text-gray-500">Cliente desde 2023</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Testimonio 2 -->
-                    <div class="swiper-slide">
-                        <div class="testimonial-card rounded-2xl p-8 mx-4 text-center">
-                            <div id="testimonial2ImageContainer" class="admin-editable admin-image-upload w-20 h-20 bg-pink-100 rounded-full mx-auto mb-6 overflow-hidden" onclick="adminUploadImage(&#39;testimonial2&#39;)">
-                                <img id="testimonial2Image" src="https://kimi-web-img.moonshot.cn/img/img.freepik.com/c687829f97c69ca3387e6d5916b92c2d3902f8e7.jpg" alt="Ana Paula" class="w-full h-full object-cover"/>
-                                <div class="admin-upload-icon" style="width: 30px; height: 30px;">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                            <input type="file" id="testimonial2FileInput" class="admin-file-input" accept="image/*" onchange="handleAdminImageUpload(event, &#39;testimonial2&#39;)"/>
-                            
-                            <div class="flex justify-center mb-4">
-                                <div class="flex text-yellow-400">
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                </div>
-                            </div>
-                            <p class="text-gray-600 mb-6 leading-relaxed">
-                                &#34;El cambio en mi piel fue notable desde la primera sesión. Carolina me ayudó a entender qué productos eran los indicados para mí. ¡Mi confianza aumentó 100%!&#34;
-                            </p>
-                            <div class="font-semibold text-gray-800">Ana Paula M.</div>
-                            <div class="text-sm text-gray-500">Cliente desde 2024</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Testimonio 3 -->
-                    <div class="swiper-slide">
-                        <div class="testimonial-card rounded-2xl p-8 mx-4 text-center">
-                            <div id="testimonial3ImageContainer" class="admin-editable admin-image-upload w-20 h-20 bg-pink-100 rounded-full mx-auto mb-6 overflow-hidden" onclick="adminUploadImage(&#39;testimonial3&#39;)">
-                                <img id="testimonial3Image" src="https://kimi-web-img.moonshot.cn/img/image.freepik.com/b7472e2eceeb755edc6db1e89cc29c89d4a857fa.jpg" alt="Valentina" class="w-full h-full object-cover"/>
-                                <div class="admin-upload-icon" style="width: 30px; height: 30px;">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                                    </svg>
-                                </div>
-                            </div>
-                            <input type="file" id="testimonial3FileInput" class="admin-file-input" accept="image/*" onchange="handleAdminImageUpload(event, &#39;testimonial3&#39;)"/>
-                            
-                            <div class="flex justify-center mb-4">
-                                <div class="flex text-yellow-400">
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                </div>
-                            </div>
-                            <p class="text-gray-600 mb-6 leading-relaxed">
-                                &#34;El spa facial gratuito fue mi entrada al mundo del cuidado de la piel. Ahora tengo mi rutina diaria y mi piel nunca había estado tan saludable. ¡Gracias Carolina!&#34;
-                            </p>
-                            <div class="font-semibold text-gray-800">Valentina L.</div>
-                            <div class="text-sm text-gray-500">Cliente desde 2024</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="swiper-pagination"></div>
-            </div>
-        </div>
-    </section>
+// Función para manejar la carga de archivos
+function handleAdminImageUpload(event, type) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        let imageElement;
+        
+        switch(type) {
+            case 'carolina':
+                imageElement = document.getElementById('carolinaProfileImage');
+                break;
+            case 'testimonial1':
+                imageElement = document.getElementById('testimonial1Image');
+                break;
+            case 'testimonial2':
+                imageElement = document.getElementById('testimonial2Image');
+                break;
+            case 'testimonial3':
+                imageElement = document.getElementById('testimonial3Image');
+                break;
+        }
+        
+        if (imageElement) {
+            imageElement.src = e.target.result;
+            showNotification('Imagen actualizada correctamente', 'success');
+        }
+    };
+    
+    reader.readAsDataURL(file);
+}
 
-    <!-- Galería Section -->
-    <section id="galeria" class="py-20 bg-white/50 relative z-10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="font-playfair text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-                    Resultados que <span class="text-pink-600">hablan por sí solos</span>
-                </h2>
-                <p class="text-xl text-gray-600">
-                    Transformaciones reales con productos Yanbal
-                </p>
-            </div>
-            
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <!-- Galería Item 1 -->
-                <div class="gallery-item bg-white rounded-2xl overflow-hidden shadow-lg">
-                    <img src="https://kimi-web-img.moonshot.cn/img/crystalclearskinandbeauty.com/90258b706f35efca2b35448460d427cb6f29c904.jpg" alt="Resultado facial Yanbal" class="w-full h-64 object-cover"/>
-                    <div class="p-6">
-                        <h3 class="font-semibold text-gray-800 mb-2">Limpieza Profunda</h3>
-                        <p class="text-gray-600 text-sm">Resultados visibles desde la primera sesión</p>
-                    </div>
-                </div>
-                
-                <!-- Galería Item 2 -->
-                <div class="gallery-item bg-white rounded-2xl overflow-hidden shadow-lg">
-                    <img src="https://kimi-web-img.moonshot.cn/img/mundoskincare.org/7939228b9ff63fb81bea10a31aa4337c12cf110b.jpg" alt="Hidratación Yanbal" class="w-full h-64 object-cover"/>
-                    <div class="p-6">
-                        <h3 class="font-semibold text-gray-800 mb-2">Hidratación Intensiva</h3>
-                        <p class="text-gray-600 text-sm">Piel luminosa y rejuvenecida</p>
-                    </div>
-                </div>
-                
-                <!-- Galería Item 3 -->
-                <div class="gallery-item bg-white rounded-2xl overflow-hidden shadow-lg">
-                    <img src="https://kimi-web-img.moonshot.cn/img/www.shutterstock.com/92f468bc05abb8d205dd5b8f82211873f9a391d4.jpg" alt="Productos Yanbal" class="w-full h-64 object-cover"/>
-                    <div class="p-6">
-                        <h3 class="font-semibold text-gray-800 mb-2">Productos Premium</h3>
-                        <p class="text-gray-600 text-sm">Tecnología avanzada en cuidado facial</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+// Función para guardar cambios (simulado)
+function saveChanges() {
+    saveAdminSettings();
+    showNotification('Cambios guardados exitosamente', 'success');
+}
 
-    <!-- Opciones de Taller (Accordion) -->
-    <section class="py-20 relative z-10">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="font-playfair text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-                    Más que un <span class="text-pink-600">spa facial</span>
-                </h2>
-                <p class="text-xl text-gray-600">
-                    Descubre todas nuestras experiencias de belleza
-                </p>
-            </div>
-            
-            <div class="space-y-4">
-                <!-- Taller 1 -->
-                <div class="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200 overflow-hidden">
-                    <button onclick="toggleAccordion(&#39;taller1&#39;)" class="w-full p-6 text-left flex justify-between items-center hover:bg-gray-50 transition-colors">
-                        <div>
-                            <h3 class="font-playfair text-xl font-semibold text-gray-800">Spa Facial Completo</h3>
-                            <p class="text-gray-600 text-sm mt-1">Limpieza, hidratación y análisis personalizado</p>
-                        </div>
-                        <svg id="taller1-icon" class="w-6 h-6 text-pink-600 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </button>
-                    <div id="taller1-content" class="accordion-content">
-                        <div class="px-6 pb-6">
-                            <p class="text-gray-600 mb-4">
-                                Nuestra experiencia más completa incluye limpieza profunda, exfoliación, hidratación intensiva y análisis detallado de tu tipo de piel. Duración: 90 minutos.
-                            </p>
-                            <div class="flex items-center text-sm text-pink-600">
-                                <span class="bg-pink-100 px-3 py-1 rounded-full font-semibold">GRATIS</span>
-                                <span class="ml-2">Valorado en $45</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Taller 2 -->
-                <div class="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200 overflow-hidden">
-                    <button onclick="toggleAccordion(&#39;taller2&#39;)" class="w-full p-6 text-left flex justify-between items-center hover:bg-gray-50 transition-colors">
-                        <div>
-                            <h3 class="font-playfair text-xl font-semibold text-gray-800">Ritual de Manos</h3>
-                            <p class="text-gray-600 text-sm mt-1">Cuidado intensivo para manos y uñas</p>
-                        </div>
-                        <svg id="taller2-icon" class="w-6 h-6 text-pink-600 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </button>
-                    <div id="taller2-content" class="accordion-content">
-                        <div class="px-6 pb-6">
-                            <p class="text-gray-600 mb-4">
-                                Hidratación profunda, exfoliación suave y masaje relajante para mantener tus manos jóvenes y hermosas. Incluye tratamiento de cutículas.
-                            </p>
-                            <div class="flex items-center text-sm text-yellow-600">
-                                <span class="bg-yellow-100 px-3 py-1 rounded-full font-semibold">+$15</span>
-                                <span class="ml-2">Adicional al spa facial</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Taller 3 -->
-                <div class="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200 overflow-hidden">
-                    <button onclick="toggleAccordion(&#39;taller3&#39;)" class="w-full p-6 text-left flex justify-between items-center hover:bg-gray-50 transition-colors">
-                        <div>
-                            <h3 class="font-playfair text-xl font-semibold text-gray-800">Aromaterapia</h3>
-                            <p class="text-gray-600 text-sm mt-1">Experiencia sensorial con aceites esenciales</p>
-                        </div>
-                        <svg id="taller3-icon" class="w-6 h-6 text-pink-600 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                    </button>
-                    <div id="taller3-content" class="accordion-content">
-                        <div class="px-6 pb-6">
-                            <p class="text-gray-600 mb-4">
-                                Sumérgete en una experiencia aromática única que combina los beneficios del spa facial con la terapia de aceites esenciales para relajación completa.
-                            </p>
-                            <div class="flex items-center text-sm text-yellow-600">
-                                <span class="bg-yellow-100 px-3 py-1 rounded-full font-semibold">+$20</span>
-                                <span class="ml-2">Adicional al spa facial</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+// Función para mostrar notificaciones
+function showNotification(message, type = 'info') {
+    // Crear elemento de notificación
+    const notification = document.createElement('div');
+    notification.className = `fixed top-20 right-4 z-50 p-4 rounded-lg shadow-lg max-w-sm transform translate-x-full transition-transform duration-300 ${
+        type === 'success' ? 'bg-green-500 text-white' : 
+        type === 'error' ? 'bg-red-500 text-white' : 
+        'bg-blue-500 text-white'
+    }`;
+    notification.textContent = message;
+    
+    // Agregar al DOM
+    document.body.appendChild(notification);
+    
+    // Mostrar con animación
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Ocultar después de 3 segundos
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => {
+            document.body.removeChild(notification);
+        }, 300);
+    }, 3000);
+}
 
-    <!-- Formulario Section -->
-    <section id="formulario" class="py-20 relative z-10">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="font-playfair text-4xl md:text-5xl font-bold text-gray-800 mb-4">
-                    Reserva tu <span class="text-pink-600">Spa Facial Gratis</span>
-                </h2>
-                <p class="text-xl text-gray-600">
-                    Solo 5 citas disponibles por semana. ¡Agenda la tuya ahora!
-                </p>
-            </div>
-            
-            <div class="bg-white/90 backdrop-blur-sm rounded-2xl p-8 shadow-xl border border-gray-200">
-                <form id="reservaForm" class="space-y-6" onsubmit="handleFormSubmit(event)">
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Nombre completo *</label>
-                            <input type="text" name="nombre" required="" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"/>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Teléfono *</label>
-                            <input type="tel" name="telefono" required="" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"/>
-                        </div>
-                    </div>
-                    
-                    <div class="grid md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Barrio / Zona *</label>
-                            <input type="text" name="barrio" required="" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors"/>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2">Horario preferido *</label>
-                            <select name="horario" required="" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors">
-                                <option value="">Selecciona un horario</option>
-                                <option value="manana">Mañana (9:00 - 12:00)</option>
-                                <option value="tarde">Tarde (14:00 - 17:00)</option>
-                                <option value="noche">Noche (17:00 - 20:00)</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">¿Tienes alguna pregunta o comentario?</label>
-                        <textarea name="comentarios" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-colors" placeholder="Cuéntame sobre tu rutina actual de cuidado facial o cualquier inquietud que tengas..."></textarea>
-                    </div>
-                    
-                    <div class="text-center">
-                        <button type="submit" class="btn-primary text-white px-12 py-4 rounded-full font-semibold text-lg shadow-lg hover:shadow-xl transition-all">
-                            🚀 Quiero mi spa facial gratis
-                        </button>
-                        <p class="text-sm text-gray-600 mt-4">
-                            Te contactaré por WhatsApp en menos de 24 horas para confirmar tu cita
-                        </p>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </section>
+// Función para cargar configuración del administrador
+function loadAdminSettings() {
+    const savedImages = localStorage.getItem('yanbalAdminImages');
+    if (savedImages) {
+        try {
+            const images = JSON.parse(savedImages);
+            Object.keys(images).forEach(key => {
+                const imgElement = document.getElementById(key + 'Image');
+                if (imgElement && images[key]) {
+                    imgElement.src = images[key];
+                }
+            });
+        } catch (e) {
+            console.log('No hay configuración guardada');
+        }
+    }
+}
 
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-white py-12 relative z-10">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div class="font-playfair text-2xl font-bold mb-4">
-                Yanbal <span class="text-pink-400">Beauty</span>
-            </div>
-            <p class="text-gray-400 mb-6">
-                Transformando vidas a través del cuidado de la piel
-            </p>
-            <div class="flex justify-center space-x-6 mb-6">
-                <a href="#" class="text-gray-400 hover:text-pink-400 transition-colors">
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"></path>
-                    </svg>
-                </a>
-                <a href="#" class="text-gray-400 hover:text-pink-400 transition-colors">
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M22.46 6c-.77.35-1.6.58-2.46.69.88-.53 1.56-1.37 1.88-2.38-.83.5-1.75.85-2.72 1.05C18.37 4.5 17.26 4 16 4c-2.35 0-4.27 1.92-4.27 4.29 0 .34.04.67.11.98C8.28 9.09 5.11 7.38 3 4.79c-.37.63-.58 1.37-.58 2.15 0 1.49.75 2.81 1.91 3.56-.71 0-1.37-.2-1.95-.5v.03c0 2.08 1.48 3.82 3.44 4.21a4.22 4.22 0 0 1-1.93.07 4.28 4.28 0 0 0 4 2.98 8.521 8.521 0 0 1-5.33 1.84c-.34 0-.68-.02-1.02-.06C3.44 20.29 5.7 21 8.12 21 16 21 20.33 14.46 20.33 8.79c0-.19 0-.37-.01-.56.84-.6 1.56-1.36 2.14-2.23z"></path>
-                    </svg>
-                </a>
-            </div>
-            <div class="text-sm text-gray-500">
-                <p>© 2024 Yanbal Beauty. Todos los derechos reservados.</p>
-                <p class="mt-2">Consultora independiente Carolina - Coordinadora de Campo Yanbal</p>
-            </div>
-        </div>
-    </footer>
+// Función para guardar configuración del administrador
+function saveAdminSettings() {
+    const images = {};
+    
+    const imageTypes = ['carolina', 'testimonial1', 'testimonial2', 'testimonial3'];
+    imageTypes.forEach(type => {
+        const imgElement = document.getElementById(type + 'Image');
+        if (imgElement) {
+            images[type] = imgElement.src;
+        }
+    });
+    
+    localStorage.setItem('yanbalAdminImages', JSON.stringify(images));
+}
 
-    <!-- Floating WhatsApp - NÚMERO ACTUALIZADO A +57 3144198482 -->
-    <a href="https://wa.me/573144198482?text=Hola%20Carolina%2C%20vi%20tu%20p%C3%A1gina%20y%20quiero%20agendar%20mi%20spa%20facial%20gratis%20%F0%9F%92%86%E2%80%8D%E2%99%80%EF%B8%8F" class="floating-whatsapp bg-green-500 text-white p-4 rounded-full shadow-lg hover:bg-green-600 transition-colors">
-        <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.885 3.488"></path>
-        </svg>
-    </a>
+// Event listener para el scroll suave en los enlaces de navegación
+document.addEventListener('click', function(e) {
+    if (e.target.matches('a[href^="#"]')) {
+        e.preventDefault();
+        const targetId = e.target.getAttribute('href').substring(1);
+        const targetElement = document.getElementById(targetId);
+        if (targetElement) {
+            targetElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    }
+});
 
-    <!-- Floating CTA -->
-    <button onclick="scrollToForm()" class="floating-cta btn-primary text-white px-6 py-3 rounded-full font-semibold shadow-lg">
-        🚀 Reservar mi cita
-    </button>
+// Event listener para el cambio de tamaño de ventana
+window.addEventListener('resize', function() {
+    if (testimonialSwiper) {
+        testimonialSwiper.update();
+    }
+});
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
-    <script src="main.js"></script>
+// Event listener para el scroll (animaciones al hacer scroll)
+window.addEventListener('scroll', function() {
+    const navbar = document.querySelector('nav');
+    if (window.scrollY > 100) {
+        navbar.classList.add('shadow-lg');
+    } else {
+        navbar.classList.remove('shadow-lg');
+    }
+});
 
+// Función para manejar el envío de WhatsApp con los datos del formulario
+function sendWhatsAppMessage(data) {
+    const message = `Hola Carolina, vi tu página y quiero agendar mi spa facial gratis.
 
-</body></html>
+Datos de contacto:
+Nombre: ${data.nombre}
+Teléfono: ${data.telefono}
+Barrio/Zona: ${data.barrio}
+Horario preferido: ${data.horario}
+Comentarios: ${data.comentarios || 'Sin comentarios'}`;
+    
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/573144198482?text=${encodedMessage}`;
+    
+    window.open(whatsappUrl, '_blank');
+}
+
+// Función adicional para mejorar la experiencia de usuario
+function addHoverEffects() {
+    const buttons = document.querySelectorAll('button, .btn-primary');
+    buttons.forEach(button => {
+        button.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+        });
+        
+        button.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+}
+
+// Inicializar efectos hover adicionales
+document.addEventListener('DOMContentLoaded', addHoverEffects);
